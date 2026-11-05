@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: '/api' })
+// Dev: falls back to '/api' (Vite proxy). Prod: set VITE_API_BASE_URL to the Render URL + '/api'
+const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL || '/api' })
 
 export const getPopularMovies   = ()          => api.get('/movies/popular')
 export const searchMovies       = (q)         => api.get(`/movies/search?q=${encodeURIComponent(q)}`)

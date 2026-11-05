@@ -7,23 +7,26 @@ from sklearn.metrics.pairwise import cosine_similarity
 class ContentFilter:
     def __init__(self):
         self.genre_matrix = None
-        self.similarity_matrix = None
         self.movie_ids = None
 
     def fit(self, genre_df: pd.DataFrame):
-        """Precompute pairwise cosine similarity across all movies."""
+        """
+        Store genre vectors only. A full movie x movie similarity matrix
+        (~9.7k^2 floats ≈ 760 MB) won't fit on small hosts, so similarity
+        is computed per request instead — one row at a time.
+        """
         self.movie_ids = genre_df["movieId"].tolist()
         genre_cols = [c for c in genre_df.columns if c not in ["movieId", "title"]]
         self.genre_matrix = genre_df[genre_cols].values
-        self.similarity_matrix = cosine_similarity(self.genre_matrix)
 
     def similar_to(self, movie_id: int, n: int = 10) -> list[dict]:
         """Return n most genre-similar movies to a given film."""
         if movie_id not in self.movie_ids:
             return []
         idx = self.movie_ids.index(movie_id)
-        scores = self.similarity_matrix[idx]
-        top = np.argsort(scores)[::-1][1:n+1]  # skip itself at index 0
+        scores = cosine_similarity(self.genre_matrix[idx:idx+1], self.genre_matrix)[0]
+        scores[idx] = -1  # exclude the movie itself
+        top = np.argsort(scores)[::-1][:n]
         return [{"movie_id": self.movie_ids[i], "score": float(scores[i])} for i in top]
 
     def recommend_from_profile(self, rated_movies: dict, n: int = 10) -> list[dict]:

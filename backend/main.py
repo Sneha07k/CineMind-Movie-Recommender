@@ -5,6 +5,7 @@ from app.api.routes import router
 from app.ml.data_loader import load_ratings, load_movies, load_links, build_genre_matrix
 from app.ml.hybrid import HybridRecommender
 from app.ml import state
+from app.core.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,7 +35,7 @@ app = FastAPI(title="CineMind API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()],
     allow_methods=["*"],
     allow_headers=["*"],
 )
